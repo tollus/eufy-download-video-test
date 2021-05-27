@@ -1,10 +1,17 @@
 require('dotenv').config();
 const { Device, Station, HTTPApi, P2PClientProtocol, P2PConnectionType } = require('eufy-security-client')
 const fs = require('fs');
+const { join } = require('path');
 
 const main = async () => {
 
-  const httpService = new HTTPApi(process.env.user, process.env.password);
+  const {
+    user,
+    password,
+    outputfolder,
+  } = process.env;
+
+  const httpService = new HTTPApi(user, password);
   await httpService.updateDeviceInfo();
   const hubs = httpService.getHubs();
   const devices = httpService.getDevices();
@@ -15,13 +22,15 @@ const main = async () => {
   const videos = await httpService.getAllVideoEvents();
   // console.log('Videos', videos);
   console.log('First Video P2P_DID', videos[0].p2p_did);
-  //console.log('video details:', JSON.stringify(videos[0]));
+  console.log('video details:', JSON.stringify(videos[0]));
 
   const device = new Device(httpService, devices[videos[0].device_sn]);
   const station = new Station(httpService, hubs[videos[0].station_sn]);
 
   station.on("download start", function (station, channel, metadata, videoStream, audioStream) {
-    testFile = fs.createWriteStream('./test.h264', {encoding: 'binary'});
+    const filePath = join(outputfolder, 'test.h264');
+
+    const testFile = fs.createWriteStream(filePath, {encoding: 'binary'});
     console.log('Station start_download!: ' + channel);
     console.log('metadata', JSON.stringify(metadata));
     videoStream.pipe(testFile)
